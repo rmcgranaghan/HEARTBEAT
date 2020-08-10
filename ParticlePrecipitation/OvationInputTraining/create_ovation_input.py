@@ -116,52 +116,64 @@ for atype_index in range(len(auroral_types)):
         lat = lats[i]
         long = longs[i]
 
-        if lat >= 50.:
+        if lat < 50.:
+            lat = 50.
 
-            lat_index = int(round((lat - 50.)/.50632911))
-            long_index = int(round(long/ 0.25263158))     
+        lat_index = int(round((lat - 50.)/.50632911))
+        long_index = int(round(long/ 0.25263158))     
 
-            jd_last = jd.copy()
+        jd_last = jd.copy()
+        try:
+            #print(dt)
+            jd = ovation_utilities.check_jd(dt)
+        except Exception as e: 
+            print(str(e))
+            print(dt)
+            no_cdf_list.append(dt)
+
+        if jd[0] != jd_last[0]: 
+
+            doy = dt.timetuple().tm_yday
+            weights = estimator.season_weights(doy)
             try:
-                #print(dt)
-                jd = ovation_utilities.check_jd(dt)
+                dF = ovation_utilities.calc_dF(dt)
             except Exception as e: 
-                print(str(e))
-                print(dt)
+                #print(str(e))
+                #print(dt)
                 no_cdf_list.append(dt)
+            season_fluxes_outs = estimator.get_season_fluxes(dF)
+            grid_mlats,grid_mlts,seasonfluxesN,seasonfluxesS = season_fluxes_outs
 
-            if jd[0] != jd_last[0]: 
-
-                doy = dt.timetuple().tm_yday
-                weights = estimator.season_weights(doy)
-                try:
-                    dF = ovation_utilities.calc_dF(dt)
-                except Exception as e: 
-                    #print(str(e))
-                    #print(dt)
-                    no_cdf_list.append(dt)
-
-
-            seasonfluxesN,seasonfluxesS = {},{}
-            for season,s_estimator in seasonal_flux_estimators.items():
-                gridfluxN,gridfluxS = s_estimator.get_gridded_flux_i_j(dF,long_index, lat_index)
-                seasonfluxesN[season]=gridfluxN
-                seasonfluxesS[season]=gridfluxS
-
-            gridflux=0
-            #print(weights.items())
+            gridflux = np.zeros_like(seasonfluxesN['summer'])
             for season,W in weights.items():
                 gridfluxN,gridfluxS = seasonfluxesN[season],seasonfluxesS[season]
                 if combine_hemispheres:
                     gridflux += W*(gridfluxN+gridfluxS)/2
-            ovation_fluxes_val[atype_index,i] = gridflux
+                elif hemi=='N':
+                    gridflux += W*gridfluxN
+                elif hemi=='S':
+                    gridflux += W*gridfluxS
 
 
-            #print(i, ovation_fluxes[i], dt, lat,long,lat_index, long_index)
+        ovation_fluxes_val[atype_index,i] = gridflux[lat_index,long_index]
+# below is with no corrections
+#         seasonfluxesN,seasonfluxesS = {},{}
+#         for season,s_estimator in seasonal_flux_estimators.items():
+#             gridfluxN,gridfluxS = s_estimator.get_gridded_flux_i_j(dF,long_index, lat_index)
+#             seasonfluxesN[season]=gridfluxN
+#             seasonfluxesS[season]=gridfluxS
 
-        else:
-            #print(i, lat, long)
-            ovation_fluxes_val[atype_index,i] =0
+#         gridflux=0
+#         #print(weights.items())
+#         for season,W in weights.items():
+#             gridfluxN,gridfluxS = seasonfluxesN[season],seasonfluxesS[season]
+#             if combine_hemispheres:
+#                 gridflux += W*(gridfluxN+gridfluxS)/2
+#         ovation_fluxes_val[atype_index,i] = gridflux
+
+
+        #print(i, ovation_fluxes[i], dt, lat,long,lat_index, long_index)
+
 
 print('done')            
 import pickle           
@@ -203,50 +215,46 @@ for atype_index in range(len(auroral_types)):
         lat = lats[i]
         long = longs[i]
 
-        if lat >= 50.:
+        if lat < 50.:
+            lat = 50.
 
-            lat_index = int(round((lat - 50.)/.50632911))
-            long_index = int(round(long/ 0.25263158))     
+        lat_index = int(round((lat - 50.)/.50632911))
+        long_index = int(round(long/ 0.25263158))     
 
-            jd_last = jd.copy()
+        jd_last = jd.copy()
+        try:
+            #print(dt)
+            jd = ovation_utilities.check_jd(dt)
+        except Exception as e: 
+            print(str(e))
+            print(dt)
+            no_cdf_list.append(dt)
+
+        if jd[0] != jd_last[0]: 
+
+            doy = dt.timetuple().tm_yday
+            weights = estimator.season_weights(doy)
             try:
-                #print(dt)
-                jd = ovation_utilities.check_jd(dt)
+                dF = ovation_utilities.calc_dF(dt)
             except Exception as e: 
-                print(str(e))
-                print(dt)
+                #print(str(e))
+                #print(dt)
                 no_cdf_list.append(dt)
+            season_fluxes_outs = estimator.get_season_fluxes(dF)
+            grid_mlats,grid_mlts,seasonfluxesN,seasonfluxesS = season_fluxes_outs
 
-            if jd[0] != jd_last[0]: 
-
-                doy = dt.timetuple().tm_yday
-                weights = estimator.season_weights(doy)
-                try:
-                    dF = ovation_utilities.calc_dF(dt)
-                except Exception as e: 
-                    #print(str(e))
-                    #print(dt)
-                    no_cdf_list.append(dt)
-
-            seasonfluxesN,seasonfluxesS = {},{}
-            for season,s_estimator in seasonal_flux_estimators.items():
-                gridfluxN,gridfluxS = s_estimator.get_gridded_flux_i_j(dF,long_index, lat_index)
-                seasonfluxesN[season]=gridfluxN
-                seasonfluxesS[season]=gridfluxS
-
-            gridflux=0
-            #print(weights.items())
+            gridflux = np.zeros_like(seasonfluxesN['summer'])
             for season,W in weights.items():
                 gridfluxN,gridfluxS = seasonfluxesN[season],seasonfluxesS[season]
                 if combine_hemispheres:
                     gridflux += W*(gridfluxN+gridfluxS)/2
-            ovation_fluxes_train[atype_index,i] = gridflux
+                elif hemi=='N':
+                    gridflux += W*gridfluxN
+                elif hemi=='S':
+                    gridflux += W*gridfluxS
 
-            #print(i, ovation_fluxes[i], dt, lat,long,lat_index, long_index)
 
-        else:
-            #print(i, lat, long)
-            ovation_fluxes_train[atype_index,i] =0
+        ovation_fluxes_train[atype_index,i] = gridflux[lat_index,long_index]
 
 print('done')            
 import pickle           
