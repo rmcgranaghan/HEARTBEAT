@@ -1,0 +1,5 @@
+.ipynb*
+*.png
+figure*
+pub
+*.pkl
